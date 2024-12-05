@@ -14,8 +14,6 @@ function sleep(duration) {
     try {
       if(!socket) {
         socket = await yieldSocket()
-      }
-      if(socket) {
         socket.send(`src/${APP_NAME}`)
       }
     } catch(err) {
@@ -48,8 +46,10 @@ function yieldSocket() {
 }
 
 function sendWebSocket(data) {
-  if(socket)
-    socket.send(data)
+  if(socket) {
+    const encoder = new TextEncoder(); // Default UTF-8 encoding
+    socket.send(encoder.encode(data))
+  }
 }
 
 chrome.runtime.onMessageExternal.addListener((request, sender, sendResponse) => {
