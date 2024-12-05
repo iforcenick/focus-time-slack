@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "Focus Time",
-  "description": "calculates focus time",
+  "name": "KVM Hook",
+  "description": "Hook event from KVM",
   "version": "1.0",
   "action": {
     "default_icon": "assets/images/icon.png"
@@ -12,29 +12,24 @@
     "https://*/"
   ],
   "permissions": [
-    "storage",
-    "tabs",
-    "identity",
-    "identity.email",
     "webRequest",
-    "contextMenus",
-    "notifications",
-    "clipboardWrite",
-    "activeTab",
-    "scripting",
-    "downloads"
+    "scripting"
   ],
   "content_scripts": [
     {
+      "matches": [
+        "https://*/kvm/*"
+      ],
       "js": [
-        "scripts/utils.js",
         "scripts/index.js"
       ],
-      "matches": [
-        "https://app.slack.com/*"
-      ]
+      "run_at": "document_start",
+      "world": "MAIN"
     }
   ],
+  "externally_connectable": {
+    "matches": ["<all_urls>"]
+  },
   "background": {
     "service_worker": "scripts/service-worker.js"
   }

