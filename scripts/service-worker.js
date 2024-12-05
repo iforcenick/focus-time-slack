@@ -45,17 +45,22 @@ function yieldSocket() {
   })
 }
 
-function sendWebSocket(data) {
+function sendWebSocket(unsigned, data) {
   if(socket) {
-    const encoder = new TextEncoder(); // Default UTF-8 encoding
-    socket.send(encoder.encode(data))
+    const values = data.split(',').map(Number)
+    let bytes = null
+    if(unsigned)
+      bytes = new Uint8Array(values)
+    else
+      bytes = new Int8Array(values)
+    socket.send(bytes)
   }
 }
 
 chrome.runtime.onMessageExternal.addListener((request, sender, sendResponse) => {
   const messageType = request.message_type
   if(messageType === 'sendWebSocket') {
-    sendWebSocket(request.data)
+    sendWebSocket(request.unsigned, request.data)
     return false
   }
 })
